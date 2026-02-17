@@ -6,6 +6,7 @@
   />
   <GlobalDialog />
   <BlockUI full-screen :blocked="isLoading" />
+  <ComfyCloudUserButton v-if="isComfyCloud" />
 </template>
 
 <script setup lang="ts">
@@ -15,12 +16,13 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { computed, onMounted } from 'vue'
 
 import GlobalDialog from '@/components/dialog/GlobalDialog.vue'
+import ComfyCloudUserButton from '@/components/user/ComfyCloudUserButton.vue'
 import config from '@/config'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { useConflictDetection } from '@/workbench/extensions/manager/composables/useConflictDetection'
 
 import { electronAPI } from '@/utils/envUtil'
-import { isDesktop } from '@/platform/distribution/types'
+import { isDesktop, isComfyCloud } from '@/platform/distribution/types'
 import { app } from '@/scripts/app'
 
 const workspaceStore = useWorkspaceStore()

@@ -8,7 +8,7 @@ import {
 import type { RouteLocationNormalized } from 'vue-router'
 
 import { useFeatureFlags } from '@/composables/useFeatureFlags'
-import { isCloud, isDesktop } from '@/platform/distribution/types'
+import { isCloud, isDesktop, isComfyCloud } from '@/platform/distribution/types'
 import { useTelemetry } from '@/platform/telemetry'
 import { useDialogService } from '@/services/dialogService'
 import { useFirebaseAuthStore } from '@/stores/firebaseAuthStore'
@@ -128,6 +128,37 @@ if (isCloud) {
   }
   // Global authentication guard
   router.beforeEach(async (to, _from, next) => {
+    // Comfy-Cloud authentication check
+    if (isComfyCloud) {
+      const { useComfyCloudAuthStore } =
+        await import('@/stores/comfyCloudAuthStore')
+      const comfyCloudAuthStore = useComfyCloudAuthStore()
+
+      // Wait for auth initialization
+      if (!comfyCloudAuthStore.isInitialized) {
+        try {
+          const { isInitialized } = storeToRefs(comfyCloudAuthStore)
+          await until(isInitialized).toBe(true, { timeout: 10_000 })
+        } catch (error) {
+          console.error('Comfy-Cloud auth initialization failed:', error)
+        }
+      }
+
+      // Check if user is authenticated
+      if (!comfyCloudAuthStore.isAuthenticated) {
+        // Get admin URL from environment or use default
+        const adminUrl =
+          import.meta.env.VITE_ADMIN_URL || 'https://admin.your-domain.com'
+        const redirectUrl = encodeURIComponent(window.location.href)
+        // Redirect to management platform login page
+        window.location.href = `${adminUrl}/login?redirect=${redirectUrl}`
+        return
+      }
+
+      // User is authenticated, continue
+      return next()
+    }
+
     const authStore = useFirebaseAuthStore()
 
     // Wait for Firebase auth to initialize

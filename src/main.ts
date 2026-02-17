@@ -26,6 +26,7 @@ import { i18n } from './i18n'
  * window.__CONFIG__is available for all modules during initialization
  */
 const isCloud = __DISTRIBUTION__ === 'cloud'
+const isComfyCloud = __DISTRIBUTION__ === 'comfy-cloud'
 
 if (isCloud) {
   const { refreshRemoteConfig } =
@@ -47,6 +48,26 @@ const firebaseApp = initializeApp(getFirebaseConfig())
 
 const app = createApp(App)
 const pinia = createPinia()
+
+// Initialize Comfy-Cloud auth store (must be after pinia creation)
+if (isComfyCloud) {
+  const { useComfyCloudAuthStore } =
+    await import('@/stores/comfyCloudAuthStore')
+  const { storeToRefs } = await import('pinia')
+  const { until } = await import('@vueuse/core')
+
+  const authStore = useComfyCloudAuthStore(pinia)
+
+  // Wait for auth initialization
+  if (!authStore.isInitialized) {
+    try {
+      const { isInitialized } = storeToRefs(authStore)
+      await until(isInitialized).toBe(true, { timeout: 10_000 })
+    } catch (error) {
+      console.error('Comfy-Cloud auth initialization failed:', error)
+    }
+  }
+}
 
 Sentry.init({
   app,

@@ -8,7 +8,7 @@ import type {
   ModelFile,
   ModelFolderInfo
 } from '@/platform/assets/schemas/assetSchema'
-import { isCloud } from '@/platform/distribution/types'
+import { isCloud, isComfyCloud } from '@/platform/distribution/types'
 import { useToastStore } from '@/platform/updates/common/toastStore'
 import type { IFuseOptions } from 'fuse.js'
 import {
@@ -394,6 +394,26 @@ export class ComfyApi extends EventTarget {
   }
 
   /**
+   * Gets the Comfy-Cloud auth header if available.
+   * Returns null for non-comfy-cloud distributions or if user is not logged in.
+   * @returns The auth header object, or null
+   */
+  private async getComfyCloudAuth() {
+    if (isComfyCloud) {
+      try {
+        const { useComfyCloudAuthStore } =
+          await import('@/stores/comfyCloudAuthStore')
+        const authStore = useComfyCloudAuthStore()
+        return authStore.getAuthHeader()
+      } catch (error) {
+        console.warn('Failed to get Comfy-Cloud auth header:', error)
+        return null
+      }
+    }
+    return null
+  }
+
+  /**
    * Waits for Firebase auth to be initialized before proceeding.
    * Includes 10-second timeout to prevent infinite hanging.
    */
@@ -433,6 +453,15 @@ export class ComfyApi extends EventTarget {
       }
 
       const authHeader = await getAuthHeaderIfAvailable()
+
+      if (authHeader) {
+        for (const [key, value] of Object.entries(authHeader)) {
+          addHeaderEntry(headers, key, value)
+        }
+      }
+    } else if (isComfyCloud) {
+      // Get Comfy-Cloud JWT token if user is logged in
+      const authHeader = await this.getComfyCloudAuth()
 
       if (authHeader) {
         for (const [key, value] of Object.entries(authHeader)) {
@@ -541,6 +570,22 @@ export class ComfyApi extends EventTarget {
         // Continue without auth token if there's an error
         console.warn(
           'Could not get auth token for WebSocket connection:',
+          error
+        )
+      }
+    } else if (isComfyCloud) {
+      // Get Comfy-Cloud JWT token for WebSocket
+      try {
+        const { useComfyCloudAuthStore } =
+          await import('@/stores/comfyCloudAuthStore')
+        const authStore = useComfyCloudAuthStore()
+        const authToken = authStore.getAuthToken()
+        if (authToken) {
+          params.set('token', authToken)
+        }
+      } catch (error) {
+        console.warn(
+          'Could not get Comfy-Cloud auth token for WebSocket connection:',
           error
         )
       }
