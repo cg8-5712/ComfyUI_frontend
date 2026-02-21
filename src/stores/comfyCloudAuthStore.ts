@@ -288,6 +288,9 @@ export const useComfyCloudAuthStore = defineStore('comfyCloudAuth', () => {
         currentUser.value = null
         balance.value = null
         isInitialized.value = true
+        // Redirect to login page
+        const adminUrl = import.meta.env.VITE_ADMIN_URL || ''
+        window.location.href = `${adminUrl}/login`
       }
     },
     { immediate: true }

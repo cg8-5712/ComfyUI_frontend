@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "build:desktop": "nx build @comfyorg/desktop-ui",
+    "build:comfy-cloud": "cross-env DISTRIBUTION=comfy-cloud NODE_OPTIONS=--max-old-space-size=8192 nx build",
     "build-storybook": "storybook build",
     "build:types": "nx build --config vite.types.config.mts && node scripts/prepare-types.js",
     "build:analyze": "cross-env ANALYZE_BUNDLE=true pnpm build",

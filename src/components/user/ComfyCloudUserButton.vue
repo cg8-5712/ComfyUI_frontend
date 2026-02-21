@@ -12,16 +12,15 @@
       @touchstart="startDrag"
     >
       <svg
-        width="12"
-        height="12"
-        viewBox="0 0 12 12"
+        width="6"
+        height="16"
+        viewBox="0 0 6 16"
         fill="currentColor"
         opacity="0.5"
       >
         <circle cx="3" cy="3" r="1.5" />
-        <circle cx="9" cy="3" r="1.5" />
-        <circle cx="3" cy="9" r="1.5" />
-        <circle cx="9" cy="9" r="1.5" />
+        <circle cx="3" cy="8" r="1.5" />
+        <circle cx="3" cy="13" r="1.5" />
       </svg>
     </div>
     <button
@@ -210,16 +209,17 @@ onUnmounted(() => {
   position: fixed;
   z-index: 9999;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
 }
 
 .drag-handle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 16px;
+  width: 16px;
+  height: 100%;
   cursor: move;
   color: rgba(255, 255, 255, 0.5);
   transition: color 0.2s;
