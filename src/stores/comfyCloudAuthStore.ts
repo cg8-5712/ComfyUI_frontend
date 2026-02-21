@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 import { useErrorHandling } from '@/composables/useErrorHandling'
 import { t } from '@/i18n'
 import { useToastStore } from '@/platform/updates/common/toastStore'
+import { api } from '@/scripts/api'
 import type {
   ComfyCloudAuthHeader,
   ComfyCloudBalance,
@@ -44,6 +45,7 @@ export const useComfyCloudAuthStore = defineStore('comfyCloudAuth', () => {
   const userEmail = computed(() => currentUser.value?.email)
   const userId = computed(() => currentUser.value?.id)
   const userTier = computed(() => currentUser.value?.tier)
+  const isAdmin = computed(() => currentUser.value?.role === 'admin')
 
   // Helper: Build API URL
   const buildApiUrl = (path: string) => `${API_BASE}${path}`
@@ -277,6 +279,10 @@ export const useComfyCloudAuthStore = defineStore('comfyCloudAuth', () => {
         // Token exists, fetch user info
         try {
           await fetchUserInfo()
+          // Set ComfyUI user identity (proxy also overrides this header)
+          if (currentUser.value?.id) {
+            api.user = `user_${currentUser.value.id}`
+          }
           isInitialized.value = true
         } catch (error) {
           console.error('Failed to fetch user info:', error)
@@ -289,7 +295,8 @@ export const useComfyCloudAuthStore = defineStore('comfyCloudAuth', () => {
         balance.value = null
         isInitialized.value = true
         // Redirect to login page
-        const adminUrl = import.meta.env.VITE_ADMIN_URL || ''
+        const adminUrl =
+          import.meta.env.VITE_ADMIN_URL || window.location.origin
         window.location.href = `${adminUrl}/login`
       }
     },
@@ -310,6 +317,7 @@ export const useComfyCloudAuthStore = defineStore('comfyCloudAuth', () => {
     userEmail,
     userId,
     userTier,
+    isAdmin,
 
     // Actions
     login,

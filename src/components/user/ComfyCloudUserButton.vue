@@ -79,9 +79,8 @@ const authStore = useComfyCloudAuthStore()
 const showMenu = ref(false)
 const widgetRef = ref<HTMLElement | null>(null)
 
-// 管理平台 URL（从环境变量读取，或使用默认值）
-const ADMIN_BASE_URL =
-  import.meta.env.VITE_ADMIN_URL || 'https://admin.your-domain.com'
+// 管理平台 URL（从环境变量读取，或使用当前域名）
+const ADMIN_BASE_URL = import.meta.env.VITE_ADMIN_URL || window.location.origin
 
 // 保存位置到 localStorage
 const savedPosition = useLocalStorage<{ x: number; y: number }>(

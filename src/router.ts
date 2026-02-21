@@ -62,9 +62,23 @@ const router = createRouter({
           name: 'GraphView',
           component: () => import('@/views/GraphView.vue'),
           beforeEnter: async (_to, _from, next) => {
-            // Then check user store
             const userStore = useUserStore()
             await userStore.initialize()
+
+            // Comfy-Cloud: auto-login with proxy user identity, skip user selection
+            if (isComfyCloud) {
+              if (userStore.needsLogin) {
+                const { useComfyCloudAuthStore } =
+                  await import('@/stores/comfyCloudAuthStore')
+                const authStore = useComfyCloudAuthStore()
+                if (authStore.userId) {
+                  const uid = `user_${authStore.userId}`
+                  await userStore.login({ userId: uid, username: uid })
+                }
+              }
+              return next()
+            }
+
             if (userStore.needsLogin) {
               next('/user-select')
             } else {
@@ -75,7 +89,26 @@ const router = createRouter({
         {
           path: 'user-select',
           name: 'UserSelectView',
-          component: () => import('@/views/UserSelectView.vue')
+          component: () => import('@/views/UserSelectView.vue'),
+          beforeEnter: async (_to, _from, next) => {
+            // Comfy-Cloud: only admin can access user-select
+            if (isComfyCloud) {
+              const { useComfyCloudAuthStore } =
+                await import('@/stores/comfyCloudAuthStore')
+              const authStore = useComfyCloudAuthStore()
+
+              // Wait for auth initialization
+              if (!authStore.isInitialized) {
+                const { storeToRefs } = await import('pinia')
+                const { until } = await import('@vueuse/core')
+                const { isInitialized } = storeToRefs(authStore)
+                await until(isInitialized).toBe(true, { timeout: 10_000 })
+              }
+
+              return authStore.isAdmin ? next() : next('/')
+            }
+            next()
+          }
         }
       ]
     }
@@ -148,7 +181,7 @@ if (isCloud) {
       if (!comfyCloudAuthStore.isAuthenticated) {
         // Get admin URL from environment or use default
         const adminUrl =
-          import.meta.env.VITE_ADMIN_URL || 'https://admin.your-domain.com'
+          import.meta.env.VITE_ADMIN_URL || window.location.origin
         const redirectUrl = encodeURIComponent(window.location.href)
         // Redirect to management platform login page
         window.location.href = `${adminUrl}/login?redirect=${redirectUrl}`

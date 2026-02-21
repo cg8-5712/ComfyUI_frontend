@@ -16,6 +16,7 @@ export interface ComfyCloudUser {
   id: number
   username: string
   email: string
+  role: string
   tier: SubscriptionTier
   balance: number
   storage_used: number
